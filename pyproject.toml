@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recql-oracle"
+version = "0.1.0"
+description = "RecQL oracle backend plugin"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+dependencies = [
+  "recql>=0.1.0",
+  "oracledb>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+
+[project.urls]
+Homepage = "https://github.com/recql/recql-python-oracle"
+Repository = "https://github.com/recql/recql-python-oracle"
+
+[project.entry-points."recql.backends"]
+oracle = "recql_oracle:open_registry"
+ora = "recql_oracle:open_registry"
+"26ai" = "recql_oracle:open_registry"
+
+[project.entry-points."recql.dialects"]
+oracle = "recql_oracle.dialect:register"
+ora = "recql_oracle.dialect:register"
+"26ai" = "recql_oracle.dialect:register"
+
+[project.entry-points."recql.connectors"]
+oracle = "recql_oracle.connect:open_connection"
+ora = "recql_oracle.connect:open_connection"
+"26ai" = "recql_oracle.connect:open_connection"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["recql_oracle*"]
+
+[tool.setuptools.package-data]
+recql_oracle = ["queries.yaml"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+pythonpath = ["."]

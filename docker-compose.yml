@@ -1,0 +1,48 @@
+services:
+  oracle:
+    image: ${ORACLE_IMAGE:-gvenzl/oracle-free:23-faststart}
+    container_name: recql-oracle-test
+    hostname: recql-oracle-test
+    # Default host port 1522 so we don't fight playground/monorepo Oracle on 1521.
+    ports:
+      - "${ORACLE_PORT:-1522}:1521"
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PWD:-RecqlPass1}
+      APP_USER: recql
+      APP_USER_PASSWORD: ${ORACLE_PWD:-RecqlPass1}
+    shm_size: ${ORACLE_SHM_SIZE:-1gb}
+    volumes:
+      - recql_oracle_test_data:/opt/oracle/oradata
+      - ./docker/setup:/container-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 180s
+    # Avoid restart loops masking a bad volume — fail clearly; use `make reset`.
+    restart: "no"
+
+  # Full conformance suite in Docker (core + this pack + playground mounts).
+  conformance:
+    build:
+      context: .
+      dockerfile: Dockerfile.conformance
+    container_name: recql-oracle-conformance
+    depends_on:
+      oracle:
+        condition: service_healthy
+    environment:
+      RECQL_ORACLE_DSN: oracle://recql:${ORACLE_PWD:-RecqlPass1}@oracle:1521/FREEPDB1
+      RECQL_CORE_MOUNT: /deps/core
+      RECQL_PLAYGROUND_MOUNT: /deps/playground
+      RECQL_PACK_MOUNT: /pack
+    volumes:
+      - ./:/pack
+      - ${RECQL_CORE_PATH:-../recql-python-core}:/deps/core:ro
+      - ${RECQL_PLAYGROUND_PATH:-../recql-playground}:/deps/playground:ro
+    working_dir: /pack
+    profiles: ["conformance"]
+
+volumes:
+  recql_oracle_test_data:
