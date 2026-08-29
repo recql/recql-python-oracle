@@ -54,7 +54,7 @@ async def oracle_registry(
     cfg = dict(plugin_cfg or {})
     db = handle if isinstance(handle, OracleDb) else OracleDb(handle)
     resolved = bindings or (
-        bindings_from_catalog(catalog) if catalog is not None else default_fixture_bindings(backend="oracle")
+        bindings_from_catalog(catalog, backend="oracle") if catalog is not None else default_fixture_bindings(backend="oracle")
     )
     if dims is None:
         dims = _dims_from_catalog(catalog, default=8)
@@ -83,9 +83,9 @@ async def oracle_registry(
     ids = TemplateCandidateIdsRetriever(
         ex, default_backend="oracle", supports_prefilter_fn=supports_prefilter
     )
-    sim = OracleSimilarityRetriever(db, dims=dims, plugin_cfg=cfg)
+    sim = OracleSimilarityRetriever(db, dims=dims, plugin_cfg=cfg, bindings=resolved)
     text = OracleTextSearchRetriever(
-        db, encoder=encoder, plugin_cfg=cfg, use_oracle_text=use_oracle_text
+        db, encoder=encoder, plugin_cfg=cfg, use_oracle_text=use_oracle_text, bindings=resolved
     )
     model_scorer = OracleModelScorer(db, catalog=catalog, bindings=resolved)
 

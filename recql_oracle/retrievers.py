@@ -44,10 +44,18 @@ def _db(handle: Any) -> OracleDb:
 
 
 class OracleSimilarityRetriever(Retriever):
-    def __init__(self, db: Any, *, dims: int = 8, plugin_cfg: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self,
+        db: Any,
+        *,
+        dims: int = 8,
+        plugin_cfg: dict[str, Any] | None = None,
+        bindings: DataBindings | None = None,
+    ) -> None:
         self.db = _db(db)
         self.dims = dims
         self.plugin_cfg = plugin_cfg or {}
+        self.bindings = bindings
 
     def supports_prefilter(self, expr: A.Expr | str | None) -> bool:
         return supports_prefilter("similarity", expr)
@@ -59,7 +67,7 @@ class OracleSimilarityRetriever(Retriever):
         where = getattr(step, "where", None)
         if where is not None:
             assert_pushdown_or_raise("similarity", where)
-        bindings = _bindings(req)
+        bindings = self.bindings or _bindings(req)
         renderer = QueryRenderer(bindings)
         items = bindings.entity(req.entity_type)
         emb_ref = getattr(step, "embedding_ref", None) or "als"
@@ -148,11 +156,13 @@ class OracleTextSearchRetriever(Retriever):
         encoder=None,
         plugin_cfg: dict[str, Any] | None = None,
         use_oracle_text: bool = False,
+        bindings: DataBindings | None = None,
     ) -> None:
         self.db = _db(db)
         self.encoder = encoder
         self.plugin_cfg = plugin_cfg or {}
         self.use_oracle_text = use_oracle_text
+        self.bindings = bindings
 
     def supports_prefilter(self, expr: A.Expr | str | None) -> bool:
         return supports_prefilter("text_search", expr)
@@ -164,7 +174,7 @@ class OracleTextSearchRetriever(Retriever):
         where = getattr(step, "where", None)
         if where is not None:
             assert_pushdown_or_raise("text_search", where)
-        bindings = _bindings(req)
+        bindings = self.bindings or _bindings(req)
         renderer = QueryRenderer(bindings)
         items = bindings.entity(req.entity_type)
         q = _resolve_param(getattr(step, "input_text_query", ""), req.params or {})
